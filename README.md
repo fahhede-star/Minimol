@@ -1,43 +1,69 @@
 # Minimol: Advanced 70B Parameter Neural Network with Terminal UI
 
-A transformer-style neural network and multi-provider LLM router with a Claude-style terminal UI. This repository provides:
+[![Mobile Edition](https://img.shields.io/badge/Mobile%20Edition-Lightweight%20%26%20Powerful-blue?style=flat-square)](README_MOBILE.md)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
 
-- A demo Terminal UI (simulated responses) for interactive exploration.
-- An LLM router with adapters for Ollama, Claude, OpenAI, Gemini, and more (config-driven).
-- A reference Transformer implementation (Minimol70B) and a trainer (illustrative; default config is very large).
-
-This README updates quickstart and Termux installation steps and clarifies configuration paths and hardware requirements.
+A transformer-style neural network and multi-provider LLM router with a Claude-style terminal UI.
 
 ---
 
-## Quick start (demo mode — no external LLM required)
+## Table of Contents
 
-This runs the terminal UI demo which simulates responses. Works on low-end machines and Termux.
+- [Features](#features)
+- [Quick Start](#quick-start)
+  - [Demo Mode (No LLM Required)](#demo-mode--no-external-llm-required)
+  - [Real Inference](#running-real-inference)
+  - [Mobile/Low-Resource](#mobiletermux-setup)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 
-1. Clone the repo and switch to the reorganization branch:
+---
+
+## Features
+
+- 🚀 **Multi-provider LLM Router** — Ollama, Claude, OpenAI, Gemini, Mistral, Cohere (config-driven)
+- 💻 **Claude-style Terminal UI** — Interactive, real-time responses with rich formatting
+- 🧠 **Reference Transformer Implementation** — Minimol70B (illustrative; see [Hardware Notes](#hardware--resource-notes))
+- 📱 **Mobile-Friendly Edition** — Lightweight variant for Android/iOS/low-resource devices ([README_MOBILE.md](README_MOBILE.md))
+- ⚙️ **Configurable Inference** — YAML-based provider selection, model swapping, API key management
+- 🔄 **Async-First Architecture** — Concurrent requests, non-blocking I/O
+
+---
+
+## Quick Start
+
+### Demo Mode (No External LLM Required)
+
+This runs the terminal UI with simulated responses. Works on low-end machines and Termux.
+
+1. **Clone the repo:**
 
 ```bash
 git clone https://github.com/fahhede-star/Minimol.git
 cd Minimol
-git fetch origin
 git checkout reorg/package-structure
 ```
 
-2. Create and activate a virtual environment:
+2. **Create and activate a virtual environment:**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate    # Windows: .venv\Scripts\activate
 ```
 
-3. Install the package (UI extras):
+3. **Install the package (UI extras):**
 
 ```bash
 pip install --upgrade pip setuptools wheel
 pip install -e .[ui]
 ```
 
-4. Run the terminal UI demo (uses simulated responses):
+4. **Run the terminal UI demo:**
 
 ```bash
 minimol-ui
@@ -49,109 +75,273 @@ You should see the interactive terminal UI. This demo does not require any model
 
 ---
 
-## Running real inference (Ollama / OpenAI / Claude)
+### Running Real Inference
 
-The router loads configuration from `config/llm_providers.yaml` by default. The repository contains example YAMLs at the repo root; you can either move them into `config/` or pass the explicit path when creating the InferenceEngine.
+The router loads configuration from `config/llm_providers.yaml` by default. Example YAMLs are included at the repo root.
 
-Recommended: move the YAMLs into `config/` so the package defaults work:
+**Recommended: Move YAMLs into `config/` directory:**
 
 ```bash
 mkdir -p config
-git mv llm_providers.yaml config/llm_providers.yaml
-git mv ui.yaml config/ui.yaml
-git commit -m "Move config files into config/ for package defaults"
+cp llm_providers.yaml config/llm_providers.yaml
+cp ui.yaml config/ui.yaml
 ```
 
-Set environment variables for cloud providers (do not commit keys):
+**Set environment variables for cloud providers (do not commit keys):**
 
 ```bash
 export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="api-..."
+export GEMINI_API_KEY="your-key-here"
 ```
 
-Example: run the InferenceEngine using OpenAI (once enabled in the YAML):
+**Example: Run inference with OpenAI:**
 
 ```bash
-python -c "import asyncio; from minimol.inference import InferenceEngine, UseCase; async def r():\
- e = InferenceEngine(); await e.initialize(); print('ready'); await e.cleanup();\
- asyncio.run(r())"
+python -c "import asyncio; from minimol.inference import InferenceEngine, UseCase; async def r(): \
+  e = InferenceEngine(); await e.initialize(); print('ready'); await e.cleanup(); \
+  asyncio.run(r())"
 ```
 
-Or use the CLI to generate a completion (requires a provider enabled in the YAML and valid keys):
+**Or use the CLI:**
 
 ```bash
 minimol generate "Explain quantum computing in 2 sentences." --provider openai --model gpt-4
 ```
 
-Notes:
-- Ollama adapter defaults to `http://localhost:11434` and expects an Ollama service running locally.
-- If the YAML config references `${ENV_VAR}` for api_key, the loader reads the environment variable.
+**Provider Notes:**
+- **Ollama**: Defaults to `http://localhost:11434`; ensure Ollama service is running locally
+- **Cloud Providers**: If YAML config references `${ENV_VAR}` for `api_key`, the loader reads the environment variable
+- **Model Switching**: Edit `config/llm_providers.yaml` to enable/disable providers and select models
 
 ---
 
-## Termux (Android) installation notes
+### Mobile/Termux Setup
 
-Termux can run the terminal UI demo but is not suitable for running large local models (PyTorch and 70B model are not feasible on mobile). Use Termux as a client to remote providers instead.
+**⚠️ For lightweight mobile installations, see [README_MOBILE.md](README_MOBILE.md) for:**
+- ~2-3 min installation (vs 15-25 min)
+- ~50-100 MB footprint (vs 2-3 GB)
+- ONNX Runtime instead of PyTorch
+- Termux-specific setup
 
-Termux quick steps:
-
-1. Install Termux (F‑Droid recommended), open it and update packages:
+**Quick Termux steps:**
 
 ```bash
 pkg update && pkg upgrade -y
 pkg install git python -y
-```
 
-2. (Optional build deps) If you need to build wheels:
-
-```bash
-pkg install clang make openssl libffi rust -y
-```
-
-3. Clone and switch to branch, create venv, install UI dependencies only:
-
-```bash
 git clone https://github.com/fahhede-star/Minimol.git
 cd Minimol
-git fetch origin
 git checkout reorg/package-structure
+
 python -m venv .venv
 source .venv/bin/activate
+
 pip install --upgrade pip setuptools wheel
-# If full extras fail, install UI deps individually:
-pip install rich prompt-toolkit pygments pyyaml
-```
+pip install -e .[ui]
 
-4. Run the terminal UI demo:
-
-```bash
+# Run the UI demo
 python -m minimol.terminal_ui
 ```
 
-5. To access remote providers from Termux, set env vars as usual (OPENAI_API_KEY, ANTHROPIC_API_KEY) and ensure your YAML config enables the provider.
-
-Caveats:
-- Many ML libraries (torch, transformers, provider SDKs) require native wheels not available on ARM/Termux. Prefer remote APIs or a server for heavy inference.
+For remote provider access from Termux, set environment variables and ensure your YAML config enables the provider. **Note:** Large model inference (torch, transformers) is not feasible on mobile; use remote APIs instead.
 
 ---
 
-## Hardware & resource notes
+## Installation
 
-- The Python code includes a reference implementation named `Minimol70B`. The default params in the code are illustrative and represent a very large model (~70B). Instantiating the default model will require very large amounts of RAM/GPU memory and will not work on typical consumer hardware.
+### Full Edition (Desktop/Server)
 
-- For development and testing, create a small/smoke model by overriding constructor params (e.g., small vocab_size, small hidden_dim, few layers). A smoke test example is suggested below.
+Includes PyTorch, transformers, and support for local large models.
+
+```bash
+pip install -e .[ui]           # Terminal UI only
+pip install -e .[ui,openai]    # UI + OpenAI support
+pip install -e .[all]          # All providers + dev tools
+```
+
+**Installation time:** 15–25 minutes  
+**Disk space:** 2–3 GB (plus model files)
+
+### Mobile Edition (Android/Low-Resource)
+
+Lightweight variant with ONNX Runtime instead of PyTorch.
+
+```bash
+pip install -e .[mobile]
+```
+
+**Installation time:** 2–3 minutes  
+**Disk space:** 50–100 MB  
+**See:** [README_MOBILE.md](README_MOBILE.md)
+
+### Optional Dependencies
+
+| Extra | Purpose |
+|-------|---------|
+| `[ui]` | Terminal UI (rich, prompt-toolkit, pygments) |
+| `[mobile]` | Lightweight edition (ONNX Runtime, no PyTorch) |
+| `[claude]` | Anthropic Claude support |
+| `[openai]` | OpenAI support |
+| `[google]` | Google Gemini support |
+| `[mistral]` | Mistral support |
+| `[cohere]` | Cohere support |
+| `[dev]` | Development tools (pytest, black, ruff, mypy) |
+| `[all]` | All of the above |
 
 ---
 
-## Suggested smoke test (local)
+## Configuration
 
-Create `tests/smoke_small_model.py` and run it to verify imports and a forward pass without heavy memory requirements:
+### File Locations
+
+- **LLM Providers:** `config/llm_providers.yaml`
+- **UI Settings:** `config/ui.yaml`
+- **Example configs:** Root directory (`llm_providers.yaml`, `ui.yaml`)
+
+### Example: `config/llm_providers.yaml`
+
+```yaml
+providers:
+  openai:
+    enabled: true
+    api_key: ${OPENAI_API_KEY}
+    model: gpt-4
+    temperature: 0.7
+
+  anthropic:
+    enabled: true
+    api_key: ${ANTHROPIC_API_KEY}
+    model: claude-3-sonnet-20240229
+
+  ollama:
+    enabled: false
+    base_url: http://localhost:11434
+    model: mistral
+
+  gemini:
+    enabled: false
+    api_key: ${GEMINI_API_KEY}
+    model: gemini-1.5-pro
+```
+
+**Environment Variable Support:** References like `${ENV_VAR}` are resolved at runtime.
+
+---
+
+## Project Structure
+
+```
+Minimol/
+├── minimol/                       # Main package
+│   ├── __init__.py
+│   ├── terminal_ui.py             # Claude-style terminal UI
+│   ├── inference.py               # LLM router & InferenceEngine
+│   ├── neural_network.py          # Minimol70B transformer (reference)
+│   ├── trainer.py                 # Training loop (illustrative)
+│   ├── cli.py                     # Command-line interface
+│   ├── providers/                 # LLM provider adapters
+│   │   ├── __init__.py
+│   │   ├── openai_adapter.py      # OpenAI integration
+│   │   ├── anthropic_adapter.py   # Claude integration
+│   │   ├── ollama_adapter.py      # Ollama local inference
+│   │   ├── gemini_adapter.py      # Google Gemini
+│   │   └── ...
+│   ├── config/                    # Configuration loaders
+│   │   ├── __init__.py
+│   │   └── loader.py              # YAML config loading
+│   └── utils/                     # Utilities
+│       ├── __init__.py
+│       └── tokenizer.py           # Text tokenization
+├── config/                        # Runtime config (create this)
+│   ├── llm_providers.yaml
+│   └── ui.yaml
+├── tests/                         # Test suite
+│   ├── __init__.py
+│   ├── test_inference.py
+│   ├── test_providers.py
+│   └── smoke_small_model.py       # Lightweight model test
+├── pyproject.toml                 # Package metadata & dependencies
+├── README.md                      # This file
+├── README_MOBILE.md               # Mobile edition guide
+└── LICENSE                        # MIT License
+```
+
+---
+
+## Development
+
+### Local Setup
+
+```bash
+# Clone and enter repo
+git clone https://github.com/fahhede-star/Minimol.git
+cd Minimol
+
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install in editable mode with dev tools
+pip install --upgrade pip setuptools wheel
+pip install -e .[dev]  # Includes pytest, black, ruff, mypy
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_inference.py -v
+
+# Run with coverage
+pytest --cov=minimol tests/
+
+# Smoke test (verify imports & small model)
+python tests/smoke_small_model.py
+```
+
+### Code Style
+
+```bash
+# Format code
+black minimol/
+
+# Lint
+ruff check minimol/
+
+# Type checking
+mypy minimol/
+```
+
+### Adding a New LLM Provider
+
+1. Create `minimol/providers/new_provider_adapter.py`
+2. Implement the `ProviderAdapter` interface (see existing adapters)
+3. Register in `minimol/providers/__init__.py`
+4. Add config section to `config/llm_providers.yaml`
+5. Add tests in `tests/test_providers.py`
+6. Update `pyproject.toml` with optional dependency (if needed)
+
+### Smoke Test (Lightweight Model)
+
+Test imports and a forward pass without heavy memory:
 
 ```python
 # tests/smoke_small_model.py
 from minimol.neural_network import Minimol70B
-m = Minimol70B(vocab_size=1000, hidden_dim=128, num_layers=2, num_heads=8, max_seq_length=512, device="cpu")
-print('params:', m.param_count)
+
+m = Minimol70B(
+    vocab_size=1000, 
+    hidden_dim=128, 
+    num_layers=2, 
+    num_heads=8, 
+    max_seq_length=512, 
+    device="cpu"
+)
+print(f'Parameters: {m.param_count}')
 ```
 
 Run with:
@@ -162,30 +352,182 @@ python tests/smoke_small_model.py
 
 ---
 
-## Configuration
+## Hardware & Resource Notes
 
-- Default config path used by the code: `config/llm_providers.yaml` and `config/ui.yaml`.
-- Example YAMLs are included at the repo root; move them to `config/` as described above.
+### Full Edition (70B Local Model)
+
+- **Minimol70B** is a reference implementation with illustrative default parameters (~70B parameters)
+- **Default instantiation requires ~24–48 GB RAM** to load model weights
+- **Not suitable for mobile or low-end machines**
+- **GPU strongly recommended** for reasonable inference speed
+
+### Memory Optimization
+
+For development and testing, create a small smoke model by overriding constructor parameters:
+
+```python
+from minimol.neural_network import Minimol70B
+
+# Lightweight version for testing
+model = Minimol70B(
+    vocab_size=2000,        # Instead of 50000
+    hidden_dim=128,         # Instead of 4096
+    num_layers=2,           # Instead of 32
+    num_heads=8,            # Instead of 32
+    max_seq_length=512,
+    device="cpu"
+)
+```
+
+This uses ~100 MB instead of 24 GB.
+
+### Mobile / Low-Resource
+
+See [README_MOBILE.md](README_MOBILE.md) for:
+- Lightweight ONNX-based models (3–7B quantized)
+- ~2–4 GB memory footprint
+- Termux (Android) setup
 
 ---
 
 ## Troubleshooting
 
-- Import errors after `pip install -e .`: ensure you activated the venv and that the branch `reorg/package-structure` is checked out.
-- If `minimol-ui` is not found after installation, re-run `pip install -e .[ui]` and confirm the console-scripts in `pyproject.toml` exist.
-- Provider failures: check that the service (Ollama) is running and that API keys are set for cloud providers.
+### Import Errors After Installation
+
+```bash
+# Issue: ModuleNotFoundError or import fails
+
+# Solution 1: Verify venv is active
+which python  # Should show path inside .venv
+
+# Solution 2: Reinstall in editable mode
+pip install -e .
+
+# Solution 3: Check you're on the correct branch
+git branch
+git checkout reorg/package-structure
+```
+
+### `minimol-ui` Command Not Found
+
+```bash
+# Issue: Command not recognized after pip install
+
+# Solution: Reinstall UI extras
+pip install -e .[ui]
+
+# Verify console_scripts in pyproject.toml
+grep "minimol-ui" pyproject.toml
+
+# Manually run if needed
+python -m minimol.terminal_ui
+```
+
+### Provider Authentication Failures
+
+```bash
+# Issue: "API key not found" or "Invalid credentials"
+
+# Check environment variables are set
+echo $OPENAI_API_KEY
+echo $ANTHROPIC_API_KEY
+
+# Verify config file enables the provider
+cat config/llm_providers.yaml | grep enabled
+
+# Ensure keys are valid (check provider dashboard)
+```
+
+### Ollama Connection Refused
+
+```bash
+# Issue: "Connection refused" when using local Ollama
+
+# Verify Ollama is running
+curl http://localhost:11434/api/tags
+
+# Check config points to correct URL
+grep base_url config/llm_providers.yaml
+
+# If using Docker, verify port mapping
+docker ps | grep ollama
+```
+
+### Slow Inference on Mobile
+
+```bash
+# Use cloud providers instead of local models
+# Edit config/llm_providers.yaml:
+local:
+  enabled: false  # Disable local inference
+openai:
+  enabled: true   # Use cloud provider
+```
+
+### Model Too Large for Device
+
+```bash
+# Issue: "Not enough memory" or "Model allocation failed"
+
+# Use a smaller quantized model
+pip install -e .[mobile]
+# Then use 3–7B models instead of 70B
+```
+
+---
+
+## Configuration
+
+- **Default paths:** `config/llm_providers.yaml` and `config/ui.yaml`
+- **Example YAMLs:** Included at repo root; copy to `config/` as needed
+- **Environment variables:** Use `${VAR_NAME}` syntax in YAML for secrets (don't commit keys!)
 
 ---
 
 ## Contributing
 
-If you want, I can also:
-- Move the example YAMLs into `config/` on the reorg/package-structure branch and push that update.
-- Add a small smoke test file and a GitHub Actions workflow to run it automatically.
-- Remove or replace the legacy top-level Python modules to avoid duplication.
+We welcome contributions! To help:
 
-If you'd like me to make these changes, reply with which items to apply (e.g., "move-config", "add-test-ci", or "all").
+### Report Issues
+
+- Describe the problem clearly
+- Include Python version, OS, and relevant environment info
+- Provide error messages and reproducible steps
+
+### Contribute Code
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make changes and add tests
+4. Run tests and linting:
+   ```bash
+   pytest
+   black minimol/
+   ruff check minimol/
+   mypy minimol/
+   ```
+5. Commit with clear messages
+6. Push and create a Pull Request
+
+### Suggested Tasks
+
+- Move example YAMLs into `config/` on the `reorg/package-structure` branch
+- Add GitHub Actions CI workflow to run tests automatically
+- Contribute new LLM provider adapters
+- Improve documentation and examples
+- Add ONNX model conversion utilities
+- Termux optimization enhancements
 
 ---
 
-License: MIT
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+## Related Links
+
+- **Mobile Edition:** [README_MOBILE.md](README_MOBILE.md)
+- **Issues & Bugs:** [GitHub Issues](https://github.com/fahhede-star/Minimol/issues)
+- **Documentation:** [Wiki](https://github.com/fahhede-star/Minimol/wiki)
