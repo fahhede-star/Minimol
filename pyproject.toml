@@ -43,6 +43,22 @@ ui = [
     "pygments>=2.16.0",
 ]
 
+# MOBILE EDITION: Lightweight for Android/iOS & low-resource devices
+# ~50-100 MB total, 2-3 min installation time
+# No PyTorch/transformers — uses ONNX Runtime instead
+mobile = [
+    "numpy>=1.24.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.24.0",
+    "aiohttp>=3.8.0",
+    "rich>=13.5.0",
+    "prompt-toolkit>=3.0.0",
+    "pygments>=2.16.0",
+    "onnxruntime>=1.16.0",
+]
+
 claude = [
     "anthropic>=0.7.0",
 ]
@@ -77,9 +93,9 @@ all = [
 ]
 
 [project.urls]
-Repository = "https://github.com/fahhedhh-ctrl/Minimol"
-Documentation = "https://github.com/fahhedhh-ctrl/Minimol/wiki"
-"Bug Tracker" = "https://github.com/fahhedhh-ctrl/Minimol/issues"
+Repository = "https://github.com/fahhede-star/Minimol"
+Documentation = "https://github.com/fahhede-star/Minimol/wiki"
+"Bug Tracker" = "https://github.com/fahhede-star/Minimol/issues"
 
 [project.scripts]
 minimol-ui = "minimol.terminal_ui:main"
