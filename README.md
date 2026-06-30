@@ -1,10 +1,10 @@
-# Minimol: Advanced 70B Parameter Neural Network with Terminal UI
+# Minimol: Multi-Provider LLM Router with Terminal UI
 
 [![Mobile Edition](https://img.shields.io/badge/Mobile%20Edition-Lightweight%20%26%20Powerful-blue?style=flat-square)](README_MOBILE.md)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
 
-A transformer-style neural network and multi-provider LLM router with a Claude-style terminal UI.
+A multi-provider LLM router with a Claude-style terminal UI.
 
 ---
 
@@ -28,7 +28,6 @@ A transformer-style neural network and multi-provider LLM router with a Claude-s
 
 - 🚀 **Multi-provider LLM Router** — Ollama, Claude, OpenAI, Gemini, Mistral, Cohere (config-driven)
 - 💻 **Claude-style Terminal UI** — Interactive, real-time responses with rich formatting
-- 🧠 **Reference Transformer Implementation** — Minimol70B (illustrative; see [Hardware Notes](#hardware--resource-notes))
 - 📱 **Mobile-Friendly Edition** — Lightweight variant for Android/iOS/low-resource devices ([README_MOBILE.md](README_MOBILE.md))
 - ⚙️ **Configurable Inference** — YAML-based provider selection, model swapping, API key management
 - 🔄 **Async-First Architecture** — Concurrent requests, non-blocking I/O
@@ -98,7 +97,7 @@ export GEMINI_API_KEY="your-key-here"
 **Example: Run inference with OpenAI:**
 
 ```bash
-python -c "import asyncio; from minimol.inference import InferenceEngine, UseCase; async def r(): \
+python -c "import asyncio; from minimol.inference import InferenceEngine; async def r(): \
   e = InferenceEngine(); await e.initialize(); print('ready'); await e.cleanup(); \
   asyncio.run(r())"
 ```
@@ -119,8 +118,8 @@ minimol generate "Explain quantum computing in 2 sentences." --provider openai -
 ### Mobile/Termux Setup
 
 **⚠️ For lightweight mobile installations, see [README_MOBILE.md](README_MOBILE.md) for:**
-- ~2-3 min installation (vs 15-25 min)
-- ~50-100 MB footprint (vs 2-3 GB)
+- ~2-3 min installation (vs 5-10 min)
+- ~50-100 MB footprint (vs 100-200 MB)
 - ONNX Runtime instead of PyTorch
 - Termux-specific setup
 
@@ -144,7 +143,7 @@ pip install -e .[ui]
 python -m minimol.terminal_ui
 ```
 
-For remote provider access from Termux, set environment variables and ensure your YAML config enables the provider. **Note:** Large model inference (torch, transformers) is not feasible on mobile; use remote APIs instead.
+For remote provider access from Termux, set environment variables and ensure your YAML config enables the provider.
 
 ---
 
@@ -152,7 +151,7 @@ For remote provider access from Termux, set environment variables and ensure you
 
 ### Full Edition (Desktop/Server)
 
-Includes PyTorch, transformers, and support for local large models.
+Includes multi-provider support for cloud-based LLMs.
 
 ```bash
 pip install -e .[ui]           # Terminal UI only
@@ -160,8 +159,8 @@ pip install -e .[ui,openai]    # UI + OpenAI support
 pip install -e .[all]          # All providers + dev tools
 ```
 
-**Installation time:** 15–25 minutes  
-**Disk space:** 2–3 GB (plus model files)
+**Installation time:** 5–10 minutes  
+**Disk space:** 100–200 MB (no model files required)
 
 ### Mobile Edition (Android/Low-Resource)
 
@@ -236,9 +235,8 @@ Minimol/
 ├── minimol/                       # Main package
 │   ├── __init__.py
 │   ├── terminal_ui.py             # Claude-style terminal UI
-│   ├── inference.py               # LLM router & InferenceEngine
-│   ├── neural_network.py          # Minimol70B transformer (reference)
-│   ├── trainer.py                 # Training loop (illustrative)
+│   ├── inference.py               # InferenceEngine
+│   ├── llm_router.py              # Multi-provider LLM router
 │   ├── cli.py                     # Command-line interface
 │   ├── providers/                 # LLM provider adapters
 │   │   ├── __init__.py
@@ -260,7 +258,7 @@ Minimol/
 │   ├── __init__.py
 │   ├── test_inference.py
 │   ├── test_providers.py
-│   └── smoke_small_model.py       # Lightweight model test
+│   └���─ test_routing.py
 ├── pyproject.toml                 # Package metadata & dependencies
 ├── README.md                      # This file
 ├── README_MOBILE.md               # Mobile edition guide
@@ -299,8 +297,8 @@ pytest tests/test_inference.py -v
 # Run with coverage
 pytest --cov=minimol tests/
 
-# Smoke test (verify imports & small model)
-python tests/smoke_small_model.py
+# Test routing
+python tests/test_routing.py
 ```
 
 ### Code Style
@@ -319,74 +317,11 @@ mypy minimol/
 ### Adding a New LLM Provider
 
 1. Create `minimol/providers/new_provider_adapter.py`
-2. Implement the `ProviderAdapter` interface (see existing adapters)
+2. Implement the provider interface (see existing adapters)
 3. Register in `minimol/providers/__init__.py`
 4. Add config section to `config/llm_providers.yaml`
 5. Add tests in `tests/test_providers.py`
 6. Update `pyproject.toml` with optional dependency (if needed)
-
-### Smoke Test (Lightweight Model)
-
-Test imports and a forward pass without heavy memory:
-
-```python
-# tests/smoke_small_model.py
-from minimol.neural_network import Minimol70B
-
-m = Minimol70B(
-    vocab_size=1000, 
-    hidden_dim=128, 
-    num_layers=2, 
-    num_heads=8, 
-    max_seq_length=512, 
-    device="cpu"
-)
-print(f'Parameters: {m.param_count}')
-```
-
-Run with:
-
-```bash
-python tests/smoke_small_model.py
-```
-
----
-
-## Hardware & Resource Notes
-
-### Full Edition (70B Local Model)
-
-- **Minimol70B** is a reference implementation with illustrative default parameters (~70B parameters)
-- **Default instantiation requires ~24–48 GB RAM** to load model weights
-- **Not suitable for mobile or low-end machines**
-- **GPU strongly recommended** for reasonable inference speed
-
-### Memory Optimization
-
-For development and testing, create a small smoke model by overriding constructor parameters:
-
-```python
-from minimol.neural_network import Minimol70B
-
-# Lightweight version for testing
-model = Minimol70B(
-    vocab_size=2000,        # Instead of 50000
-    hidden_dim=128,         # Instead of 4096
-    num_layers=2,           # Instead of 32
-    num_heads=8,            # Instead of 32
-    max_seq_length=512,
-    device="cpu"
-)
-```
-
-This uses ~100 MB instead of 24 GB.
-
-### Mobile / Low-Resource
-
-See [README_MOBILE.md](README_MOBILE.md) for:
-- Lightweight ONNX-based models (3–7B quantized)
-- ~2–4 GB memory footprint
-- Termux (Android) setup
 
 ---
 
@@ -453,34 +388,12 @@ grep base_url config/llm_providers.yaml
 docker ps | grep ollama
 ```
 
-### Slow Inference on Mobile
+### Slow Inference
 
 ```bash
-# Use cloud providers instead of local models
-# Edit config/llm_providers.yaml:
-local:
-  enabled: false  # Disable local inference
-openai:
-  enabled: true   # Use cloud provider
+# Use cloud providers with better latency
+# Edit config/llm_providers.yaml to select preferred provider
 ```
-
-### Model Too Large for Device
-
-```bash
-# Issue: "Not enough memory" or "Model allocation failed"
-
-# Use a smaller quantized model
-pip install -e .[mobile]
-# Then use 3–7B models instead of 70B
-```
-
----
-
-## Configuration
-
-- **Default paths:** `config/llm_providers.yaml` and `config/ui.yaml`
-- **Example YAMLs:** Included at repo root; copy to `config/` as needed
-- **Environment variables:** Use `${VAR_NAME}` syntax in YAML for secrets (don't commit keys!)
 
 ---
 
@@ -515,8 +428,8 @@ We welcome contributions! To help:
 - Add GitHub Actions CI workflow to run tests automatically
 - Contribute new LLM provider adapters
 - Improve documentation and examples
-- Add ONNX model conversion utilities
-- Termux optimization enhancements
+- Add more comprehensive tests
+- Performance optimizations
 
 ---
 
